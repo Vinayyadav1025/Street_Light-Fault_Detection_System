@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./CSS/style.css">
+    <link rel="stylesheet" href="./display.css">
+    <title>Data Display</title>
+</head>
+<body>
+
+    <div class="table-container">
+        <h2>Data Display</h2>
+        <div class="table-wrapper">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th>Lamp ID</th>
+                        <th>Lamp Current</th>
+                        <th>Lamp Voltage</th>
+                        <th>Lamp Intensity</th>
+                        <th>Fault Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be dynamically added here using JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <button id="showAllLocationsBtn" onclick="showAllLocations()" style="cursor: pointer;">Show All Locations</button>
+    
+    <script src="https://cdn.socket.io/4.1.2/socket.io.min.js"></script>
+    <script>
+        let map;
+        let locations = []; // Array to store all locations
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const tbody = document.querySelector('#data-table tbody');
+
+            const socket = io();
+            socket.on('latestData', (data) => {
+                if (data.ldr == 0) {
+                    data.ldr="HIGH"
+                }
+                else if(data.ldr == 1){
+                    data.ldr = "LOW";
+                    if ( data.voltage <= 4100) {//data.current <= 11500 &&
+                        data.faultType = 'Cable Break';
+                        data.ldr = "LOW"
+                    } else if (data.voltage < 210 && data.current > 5) {
+                        data.faultType = 'Short Circuit';
+                    } else if (data.current > 5 && (data.voltage > 210 && data.voltage < 250)) {
+                        data.faultType = 'Current Leakage';
+                    } else if (data.current <= 0 && data.voltage <= 210) {
+                        data.faultType = 'Malfunctioning Power Source';
+                    }
+                }
+                
+                console.log('Received latest data from server:', data);
+
+                const newRow = `<tr>
+                    <td>${data.Id}</td>
+                    <td>${data.current}</td>
+                    <td>${data.voltage}</td>
+                    <td>${data.ldr}</td>
+                    <td>${data.faultType}</td>
+                </tr>`;
+
+                // Add new row at the end
+                tbody.innerHTML += newRow;
+
+                // Check if the number of rows exceeds 7
+                if (tbody.children.length > 7) {
+                    // Remove the oldest row
+                    tbody.removeChild(tbody.firstChild);
+                }
+
+                // Set the max-height dynamically based on the number of rows
+                tbody.style.maxHeight = `${tbody.children.length * 48}px`; // Assuming each row is 48px in height
+
+                // Check if the number of rows exceeds 7 to add a scrollbar
+                if (tbody.children.length > 7) {
+                    tbody.classList.add('scrollbar-enabled');
+                } else {
+                    tbody.classList.remove('scrollbar-enabled');
+                }
+
+                // Add the location to the array
+                locations.push({ lat: data.latitude, lng: data.longitude });
+            });
+        });
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 0, lng: 0 },
+                zoom: 2,
+            });
+        }
+
+        function showAllLocations() {
+            // Clear existing markers
+            markers.forEach(marker => {
+                marker.setMap(null);
+            });
+
+            // Add markers for all locations
+            locations.forEach(location => {
+                new google.maps.Marker({
+                    position: location,
+                    map: map,
+                    title: "Location",
+                });
+            });
+        }
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <script src="./JS/script.js"></script>
+
+</body>
+</html>

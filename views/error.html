@@ -1,0 +1,21 @@
+<!-- error-page.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Page</title>
+</head>
+<body>
+    <h1>Fault Type: <span id="faultType"></span></h1>
+    <!-- You can add more content or styling as needed -->
+    <script>
+        // Extract the fault type from the query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const faultType = urlParams.get('faultType');
+
+        // Display the fault type on the page
+        document.getElementById('faultType').textContent = faultType;
+    </script>
+</body>
+</html>
